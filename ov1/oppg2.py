@@ -9,6 +9,21 @@ T_p_to_c = [[0.894372, -0.447712, 0.0127064, -0.25861],
 		    [0.438049, 0.868713, -0.232355, 0.791487],
 		    [0, 0, 0, 1]]
 
+def point(x,y,z):
+    return np.array([[x], [y], [z], [1]])
+
+#fiducial markers in arm frame
+p1 = np.array([-0.130851, -0.0092500, 0.0092500, 1.0]).transpose()
+p2 = np.array([0.177649, -0.0092500, 0.0092500, 1.0]).transpose()
+p3 = np.array([0.432149, -0.0092500, 0.0092500, 1.0]).transpose()
+
+#fiducial markers in rotors frame
+p4 = np.array([-0.027000, -0.0879548, -0.0357487, 1.0]).transpose()
+p5 = np.array([-0.027000, -0.1760080, -0.0540649, 1.0]).transpose()
+p6 = np.array([-0.027000 , 0.2088050, -0.0448200 , 1.0]).transpose()
+p7 = np.array([-0.027000, 0.1073210, -0.0397018 , 1.0]).transpose()
+
+
 def Translate(t_x, t_y, t_z):
     return np.array(
             [[1, 0, 0, t_x],
@@ -62,9 +77,6 @@ def cam_to_pxl(X,Y,Z): # task 1d
 
 	return u,v
 
-def point(x,y,z):
-    return np.array([[x], [y], [z], [1]])
-
 def draw_line(a, b, **args):
     plt.plot([a[0], b[0]], [a[1], b[1]], **args, linewidth=3.5)
 
@@ -89,6 +101,11 @@ def draw_frame(T):
 
     #plt.text(o1- 30,o2 - 5, label)
 
+def plot_point(point, T, color = 'wo'):
+	point_transformed = T@point
+	x,y = cam_to_pxl(point_transformed[0], point_transformed[1], point_transformed[2])
+	plt.plot(x,y,color)
+
 # oppg 2a
 img=mpimg.imread('quanser.jpg')
 imgplot = plt.imshow(img)
@@ -98,21 +115,10 @@ screw1 = np.array([[0.1145], [0], [0], [1]])
 screw2 = np.array([[0], [0.1145], [0], [1]])
 screw3 = np.array([[0.1145], [0.1145], [0], [1]])
 
-screw0_cam = T_p_to_c @ screw0
-x,y = cam_to_pxl(screw0_cam[0], screw0_cam[1], screw0_cam[2])
-plt.plot(x,y, 'wo')
-
-screw1_cam = T_p_to_c @ screw1
-x,y = cam_to_pxl(screw1_cam[0], screw1_cam[1], screw1_cam[2])
-plt.plot(x,y, 'wo')
-
-screw2_cam = T_p_to_c @ screw2
-x,y = cam_to_pxl(screw2_cam[0], screw2_cam[1], screw2_cam[2])
-plt.plot(x,y, 'wo')
-
-screw3_cam = T_p_to_c @ screw3
-x,y = cam_to_pxl(screw3_cam[0], screw3_cam[1], screw3_cam[2])
-plt.plot(x,y, 'wo')
+plot_point(screw0, T_p_to_c)
+plot_point(screw1, T_p_to_c)
+plot_point(screw2, T_p_to_c)
+plot_point(screw3, T_p_to_c)
 
 #oppg 2b
 draw_frame(T_p_to_c)
@@ -135,5 +141,15 @@ draw_frame(T_arm_to_hinge)
 phi = -0.5
 T_rotors_to_arm = T_arm_to_hinge @ Translate(0.653, 0, -0.0312)
 draw_frame(T_rotors_to_arm)
+
+#oppg 3f
+plot_point(p1, T_arm_to_hinge, 'co')
+plot_point(p2, T_arm_to_hinge, 'co')
+plot_point(p3, T_arm_to_hinge, 'co')
+
+plot_point(p4, T_rotors_to_arm, 'co')
+plot_point(p5, T_rotors_to_arm, 'co')
+plot_point(p6, T_rotors_to_arm, 'co')
+plot_point(p7, T_rotors_to_arm, 'co')
 
 plt.show()
