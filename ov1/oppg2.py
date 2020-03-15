@@ -3,11 +3,6 @@ import matplotlib.image as mpimg
 import math as math
 import numpy as np
 
-#Platform to camera matrix
-T_p_to_c = [[0.894372, -0.447712, 0.0127064, -0.25861],
-		    [-0.0929288, -0.213413, -0.972924, 0.116584],
-		    [0.438049, 0.868713, -0.232355, 0.791487],
-		    [0, 0, 0, 1]]
 
 def point(x,y,z):
     return np.array([[x], [y], [z], [1]])
@@ -65,23 +60,23 @@ def R_z(theta):
             [0, 0, 0, 1]] )
 
 def cam_to_pxl(X,Y,Z): # task 1d
-	#camera intrinsic (heli_intrinsics)
-	#X,Y,Z should be given in meters
-	fx = 1075.47
-	fy = 1077.22
-	cx = 621.01
-	cy = 362.80
+    #camera intrinsic (heli_intrinsics)
+    #X,Y,Z should be given in meters
+    fx = 1075.47
+    fy = 1077.22
+    cx = 621.01
+    cy = 362.80
 
-	u = cx + fx*(X/Z)
-	v = cy + fy*(Y/Z)
+    u = cx + fx*(X/Z)
+    v = cy + fy*(Y/Z)
 
-	return u,v
+    return u,v
 
 def draw_line(a, b, **args):
     plt.plot([a[0], b[0]], [a[1], b[1]], **args, linewidth=3.5)
 
 def draw_frame(T):
-	#From T to camera
+    #From T to camera
     origin = T@point(0,0,0)
     o1,o2 = cam_to_pxl(origin[0], origin[1], origin[2])
 
@@ -102,9 +97,16 @@ def draw_frame(T):
     #plt.text(o1- 30,o2 - 5, label)
 
 def plot_point(point, T, color = 'wo'):
-	point_transformed = T@point
-	x,y = cam_to_pxl(point_transformed[0], point_transformed[1], point_transformed[2])
-	plt.plot(x,y,color)
+    point_transformed = T@point
+    x,y = cam_to_pxl(point_transformed[0], point_transformed[1], point_transformed[2])
+    plt.plot(x,y,color)
+
+
+#Platform to camera matrix
+T_plat_to_cam = [[0.894372, -0.447712, 0.0127064, -0.25861],
+            [-0.0929288, -0.213413, -0.972924, 0.116584],
+            [0.438049, 0.868713, -0.232355, 0.791487],
+            [0, 0, 0, 1]]
 
 # oppg 2a
 img=mpimg.imread('quanser.jpg')
@@ -115,41 +117,45 @@ screw1 = np.array([[0.1145], [0], [0], [1]])
 screw2 = np.array([[0], [0.1145], [0], [1]])
 screw3 = np.array([[0.1145], [0.1145], [0], [1]])
 
-plot_point(screw0, T_p_to_c)
-plot_point(screw1, T_p_to_c)
-plot_point(screw2, T_p_to_c)
-plot_point(screw3, T_p_to_c)
+plot_point(screw0, T_plat_to_cam)
+plot_point(screw1, T_plat_to_cam)
+plot_point(screw2, T_plat_to_cam)
+plot_point(screw3, T_plat_to_cam)
 
 #oppg 2b
-draw_frame(T_p_to_c)
+draw_frame(T_plat_to_cam)
 
 #oppg 3c
 psi = 11.77 #Yaw
-T_base_to_plat = T_p_to_c @ Translate(0.0573, 0.0573, 0) @ R_z(psi)
-draw_frame(T_base_to_plat) #trans to cam to pix
+T_base_to_plat = Translate(0.0573, 0.0573, 0) @ R_z(psi)
+T_base_to_cam = T_plat_to_cam @ T_base_to_plat
+draw_frame(T_base_to_cam) #trans to cam to pix
 
 #oppg 3d
 theta = 28.87 #Pitch
-T_hinge_to_base = T_base_to_plat @ Translate(0, 0, 0.325) @ R_y(theta)
-draw_frame(T_hinge_to_base)
+T_hinge_to_base = Translate(0, 0, 0.325) @ R_y(theta)
+T_hinge_to_cam = T_base_to_cam @ T_hinge_to_base
+draw_frame(T_hinge_to_cam)
 
 #oppg 3d
-T_arm_to_hinge = T_hinge_to_base @ Translate(0, 0, -0.0552)
-draw_frame(T_arm_to_hinge)
+T_arm_to_hinge = Translate(0, 0, -0.0552)
+T_arm_to_cam = T_hinge_to_cam @ T_arm_to_hinge
+draw_frame(T_arm_to_cam) #arm to plat
 
 #oppg 3e
-phi = -0.5
-T_rotors_to_arm = T_arm_to_hinge @ Translate(0.653, 0, -0.0312)
-draw_frame(T_rotors_to_arm)
+phi = -0.5 #Roll
+T_rotors_to_arm = Translate(0.653, 0, -0.0312) @ R_x(phi)
+T_rotors_to_cam = T_arm_to_cam @ T_rotors_to_arm
+draw_frame(T_rotors_to_cam)
 
 #oppg 3f
-plot_point(p1, T_arm_to_hinge, 'co')
-plot_point(p2, T_arm_to_hinge, 'co')
-plot_point(p3, T_arm_to_hinge, 'co')
+plot_point(p1, T_arm_to_cam, 'co')
+plot_point(p2, T_arm_to_cam, 'co')
+plot_point(p3, T_arm_to_cam, 'co')
 
-plot_point(p4, T_rotors_to_arm, 'co')
-plot_point(p5, T_rotors_to_arm, 'co')
-plot_point(p6, T_rotors_to_arm, 'co')
-plot_point(p7, T_rotors_to_arm, 'co')
+plot_point(p4, T_rotors_to_cam, 'co')
+plot_point(p5, T_rotors_to_cam, 'co')
+plot_point(p6, T_rotors_to_cam, 'co')
+plot_point(p7, T_rotors_to_cam, 'co')
 
 plt.show()
